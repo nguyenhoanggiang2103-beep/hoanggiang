@@ -1,0 +1,69 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Đố vui Sách Lời Chúa</title>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#1B1B3A;--card:#2A2A5A;--fg:#fff;--mut:#D5D5EE;--acc:#F2B84B;--on:#1B1B3A;--ok:#5FD38D;--bad:#FF9C9C}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--fg);font:400 18px/1.4 "Be Vietnam Pro",system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+#app{max-width:1100px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:20px;min-height:100vh}
+h1{margin:0;font-size:clamp(32px,6vw,56px);line-height:1.1;font-weight:800}h2{margin:0;font-size:clamp(24px,4vw,40px);line-height:1.25;font-weight:800}
+.k{color:var(--acc);font-weight:600;letter-spacing:.04em}.m{color:var(--mut)}
+.card{background:var(--card);border-radius:16px;padding:16px 20px}
+button,input{font:600 20px "Be Vietnam Pro",sans-serif;min-height:56px;border-radius:12px}
+button{background:var(--acc);color:var(--on);border:0;padding:0 36px;cursor:pointer}button:disabled{opacity:.5}
+input{border:2px solid var(--acc);background:var(--card);color:var(--fg);padding:0 16px;width:100%}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.opt{background:var(--card);color:var(--fg);display:flex;align-items:center;gap:16px;text-align:left;padding:14px 18px;min-height:84px;width:100%;border-radius:16px}
+.opt b{background:var(--acc);color:var(--on);min-width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.opt.ok{outline:4px solid var(--ok)}.opt.sel{outline:4px solid var(--acc)}
+.row{display:flex;align-items:center;gap:20px;font-weight:600;font-size:clamp(20px,3.5vw,30px)}.row .n{flex:1}
+.tm{background:var(--acc);color:var(--on);width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800}
+.top{display:flex;justify-content:space-between;align-items:center}
+.pod{display:flex;align-items:flex-end;justify-content:center;gap:12px;margin-top:12px}.pod>div{flex:1;max-width:260px;text-align:center}.pod .bar{background:var(--acc);color:var(--on);border-radius:16px 16px 0 0;font-size:48px;font-weight:800;padding-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:10px}.chips span{background:var(--card);padding:6px 14px;border-radius:99px}
+#qr{background:#fff;padding:14px;border-radius:12px;width:max-content}
+</style></head><body><div id="app"><div class="m">Đang kết nối…</div></div>
+<script>
+const L="ABCD",app=document.getElementById("app"),host=location.pathname==="/host";
+let v=null,off=0,key=sessionStorage.getItem("gk")||"",id=localStorage.getItem("gid");
+if(!id){id=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());localStorage.setItem("gid",id)}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const left=()=>v?Math.max(0,Math.ceil((v.t0+v.time-(Date.now()+off))/1000)):0;
+const post=(u,b)=>fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+const act=a=>post("/api/host",{key,action:a});
+window.act=act;
+window.join=()=>{const n=document.getElementById("nm").value.trim();if(n)post("/api/join",{id,name:n})};
+window.pick=c=>post("/api/answer",{id,c});
+const top3=r=>(r||[]).map((p,i)=>`<div class="card row"><span class="k">${i+1}</span><span class="n">${esc(p.name)}</span><span>${p.s}</span></div>`).join("")||'<div class="m">Chưa có người chơi.</div>';
+const podium=r=>{const o=[1,0,2].filter(i=>r[i]);return`<div class="pod">${o.map(i=>`<div><div style="font-size:26px;font-weight:800">${esc(r[i].name)}</div><div class="m">${r[i].s} điểm</div><div class="bar" style="height:${[220,150,100][i]}px">${i+1}</div></div>`).join("")}</div>`};
+const opts=(qq,sel,ok,btn)=>`<div class="grid">${qq.o.map((t,i)=>`<${btn?"button":"div"} class="opt${ok===i?" ok":""}${sel===i?" sel":""}" ${btn?`onclick="pick(${i})"`:""}><b>${L[i]}</b><span>${esc(t)}</span></${btn?"button":"div"}>`).join("")}</div>`;
+function render(){
+ if(!v)return;const ae=document.activeElement;if(ae&&ae.tagName==="INPUT")return;
+ const me=v.me,q=v.question;let h="";
+ if(host){
+  if(v.phase==="lobby")h=`<div class="k">GAMESHOW THIẾU NHI</div><h1>Đố vui Sách Lời Chúa</h1><div class="m">Quét mã QR bằng điện thoại, nhập tên và chờ bắt đầu.</div><div id="qr"></div><div class="m">${esc(location.origin)}/</div><div class="chips">${v.names.map(n=>`<span>${esc(n)}</span>`).join("")}</div><div><button ${v.count?"":"disabled"} onclick="act('start')">Bắt đầu (${v.count} người)</button></div>`;
+  else if(v.phase==="question")h=`<div class="top"><span class="m">Câu ${v.q+1}/${v.total}</span><span class="tm" id="tm">${left()}</span><span class="m">Đã trả lời ${v.answered}/${v.count}</span></div><h2>${esc(q.q)}</h2>${opts(q)}`;
+  else if(v.phase==="reveal"){const last=v.q===v.total-1;h=`<div class="k">SAU CÂU ${v.q+1}/${v.total}</div><div class="m">Đáp án đúng: <b style="color:var(--fg)">${L[v.correct]}. ${esc(q.o[v.correct])}</b></div><h2>Top 3 dẫn đầu</h2>${top3(v.top)}<div><button onclick="act('${last?"final":"next"}')">${last?"Vinh danh người chiến thắng":"Câu tiếp theo"}</button></div>`}
+  else h=`<div class="k" style="text-align:center">KẾT THÚC ${v.total}/${v.total} CÂU</div><h1 style="text-align:center">Vinh danh người chiến thắng</h1>${podium(v.top)}<div><button onclick="if(confirm('Bắt đầu ván mới và xoá danh sách người chơi?'))act('reset')">Ván mới</button></div>`;
+ }else{
+  if(!me)h=`<div class="k">ĐỐ VUI SÁCH LỜI CHÚA</div><h1>Nhập tên của bạn</h1><label class="m" for="nm">Tên hiển thị trên bảng xếp hạng</label><input id="nm" maxlength="20" placeholder="Ví dụ: Minh Anh"><button onclick="join()">Vào chơi</button>`;
+  else if(v.phase==="lobby")h=`<div class="k">ĐỐ VUI SÁCH LỜI CHÚA</div><h1>Chào ${esc(me.name)}!</h1><div class="m">Bạn đã vào phòng. Chờ quản trò bấm bắt đầu.</div>`;
+  else if(v.phase==="question")h=`<div class="top"><span class="m">Câu ${v.q+1}/${v.total}</span><span class="tm" id="tm">${left()}</span><span class="m">${esc(me.name)}</span></div><h2 style="font-size:24px">${esc(q.q)}</h2>${me.choice!=null?`<div class="card">Bạn đã chọn <b>${L[me.choice]}</b>. Chờ kết quả…</div>`:opts(q,null,null,true)}`;
+  else if(v.phase==="reveal"){const g=me.gain;h=`<div class="k">SAU CÂU ${v.q+1}/${v.total}</div><h2 style="color:${g?"var(--ok)":"var(--bad)"}">${me.choice==null?"Bạn chưa trả lời":g?"Đúng rồi! +"+g:"Chưa đúng"}</h2><div class="m">Đáp án: ${L[v.correct]}. ${esc(q.o[v.correct])}</div><div class="card">Hạng <b>${me.rank}</b>/${v.count} · ${me.score} điểm</div><h2 style="font-size:24px">Top 3</h2>${top3(v.top)}`}
+  else h=`<div class="k">KẾT THÚC</div><h1>Bạn hạng ${me.rank}/${v.count}</h1><div class="m">${me.score} điểm</div>${podium(v.top)}`;
+ }
+ app.innerHTML=h;
+ if(host&&v.phase==="lobby"&&window.QRCode)new QRCode(document.getElementById("qr"),{text:location.origin+"/",width:240,height:240});
+}
+function connect(){
+ const es=new EventSource("/events?id="+encodeURIComponent(id)+(host?"&key="+encodeURIComponent(key):""));
+ es.onmessage=e=>{v=JSON.parse(e.data);off=v.now-Date.now();render()};
+}
+async function login(){
+ if(key){const r=await act("ping");if(r.ok){connect();return}}
+ app.innerHTML=`<div class="k">QUẢN TRÒ</div><h1>Nhập mật khẩu</h1><input id="pw" type="password" aria-label="Mật khẩu quản trò"><button id="go">Vào</button>${key?'<div style="color:var(--bad)">Mật khẩu chưa đúng.</div>':""}`;
+ document.getElementById("go").onclick=()=>{key=document.getElementById("pw").value;sessionStorage.setItem("gk",key);login()};
+}
+setInterval(()=>{const t=document.getElementById("tm");if(t)t.textContent=left()},250);
+host?login():connect();
+</script></body></html>
